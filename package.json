@@ -12,11 +12,18 @@
   },
   "dependencies": {
     "@apollo/gateway": "latest",
+    "apollo-boost": "^0.4.7",
+    "apollo-cache-inmemory": "^1.6.5",
+    "apollo-link-http": "^1.5.16",
     "apollo-server": "latest",
+    "cross-fetch": "^3.0.4",
     "graphql": "latest"
   },
   "scripts": {
     "start-gateway": "nodemon gateway.js",
+    "start-service-club-a": "nodemon services/club-a/index.js",
+    "start-service-club-b": "nodemon services/club-b/index.js",
+    "start-services": "concurrently \"yarn:start-service-*\"",
     "postinstall": "lerna bootstrap"
   }
 }
