@@ -14,5 +14,9 @@
     "@apollo/gateway": "latest",
     "apollo-server": "latest",
     "graphql": "latest"
+  },
+  "scripts": {
+    "start-gateway": "nodemon gateway.js",
+    "postinstall": "lerna bootstrap"
   }
 }

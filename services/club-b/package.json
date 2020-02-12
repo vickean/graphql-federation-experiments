@@ -1,0 +1,14 @@
+{
+  "name": "club-b",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@apollo/federation": "latest",
+    "apollo-server": "latest",
+    "graphql": "latest"
+  }
+}
