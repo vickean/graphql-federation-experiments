@@ -2,6 +2,7 @@ const { ApolloServer, gql } = require("apollo-server");
 const { ApolloClient } = require("apollo-client");
 const { HttpLink } = require("apollo-link-http");
 const { InMemoryCache } = require("apollo-cache-inmemory");
+// const { ApolloClient, InMemoryCache } = require("apollo-boost");
 require("cross-fetch/polyfill");
 
 const typeDefs = gql`
@@ -32,31 +33,55 @@ const typeDefs = gql`
     id: String
     name: String
     desc: String
+    code: String
   }
 
   type Query {
-    golfers: [Golfer]
+    golfers(club: String!): [Golfer]
     courses: [GolfCourse]
     flights: [FlightSlots]
-    club: Club
+    clubs: [Club]
   }
 `;
 
-const cache = new InMemoryCache();
-const link = new HttpLink({
-  uri: "http://localhost:5001"
-});
+const connections = {
+  tpckl: {
+    client: new ApolloClient({
+      cache: new InMemoryCache(),
+      link: new HttpLink({
+        uri: "http://localhost:5001"
+      })
+    })
+  },
+  tgcc: {
+    client: new ApolloClient({
+      cache: new InMemoryCache(),
+      link: new HttpLink({
+        uri: "http://localhost:5002"
+      })
+    })
+  }
+};
 
-const tpcklClient = new ApolloClient({
-  cache,
-  link
+let dummyClient = new ApolloClient({
+  cache: new InMemoryCache(),
+  link: new HttpLink({
+    uri: "#"
+  })
 });
 
 const resolvers = {
   Query: {
-    golfers: async () => {
+    golfers: async (_, { club }) => {
       let output = [];
-      await tpcklClient
+
+      if (club in connections) {
+        dummyClient = connections[club].client;
+      } else {
+        throw new Error("Unknown Club Code");
+      }
+
+      await dummyClient
         .query({
           query: gql`
             query golfers {
@@ -72,8 +97,40 @@ const resolvers = {
             }
           `
         })
-        .then(data => (output = data.golfers));
-      console.log(output);
+        .then(data => {
+          output = [...output, ...data.data.golfers];
+        });
+
+      // console.log(output);
+      return output;
+    },
+    clubs: async () => {
+      let output = [];
+
+      const conArray = Object.keys(connections);
+
+      await Promise.all(
+        conArray.map(async el => {
+          await connections[el].client
+            .query({
+              query: gql`
+                query club {
+                  club {
+                    id
+                    name
+                    desc
+                  }
+                }
+              `
+            })
+            .then(data => {
+              let preOutput = data.data.club;
+              preOutput["code"] = el;
+              output = [...output, preOutput];
+            });
+        })
+      );
+
       return output;
     }
   }
@@ -81,6 +138,6 @@ const resolvers = {
 
 const server = new ApolloServer({ typeDefs, resolvers });
 
-server.listen(5000).then(url => {
+server.listen(5000).then(({ url }) => {
   console.log(`Gateway listening at ${url}`);
 });
